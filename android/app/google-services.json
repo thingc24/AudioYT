@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "696314158587",
+    "project_id": "audio-62ffc",
+    "storage_bucket": "audio-62ffc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696314158587:android:558474b2dcc7ada6377f5e",
+        "android_client_info": {
+          "package_name": "com.example.audio"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "696314158587-a3rv47imvjg24h8apdk47t75118fgq09.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.audio",
+            "certificate_hash": "9033905ffdf57769828138cd84ef3a375714cc3b"
+          }
+        },
+        {
+          "client_id": "696314158587-g96go4f08tnticd60m235pba726agas0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPDjSQPbJwjNeTcubKlSDS5vjtFOLZ3Ok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "696314158587-g96go4f08tnticd60m235pba726agas0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/audio_provider.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -47,7 +49,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget buildHistoryCard({
+  Widget buildHistoryCard(BuildContext context, {
     required String title,
     required String category,
     required String startTime,
@@ -65,8 +67,20 @@ class _HistoryPageState extends State<HistoryPage> {
         const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         leading: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.network(imageUrl,
-              width: 60, height: 60, fit: BoxFit.cover),
+          child: Image.network(
+            imageUrl,
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 60,
+                height: 60,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.music_note, color: Colors.grey),
+              );
+            },
+          ),
         ),
         title: Text(
           title,
@@ -75,8 +89,10 @@ class _HistoryPageState extends State<HistoryPage> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(category,
-                style: const TextStyle(color: Colors.grey, fontSize: 14)),
+            Text(
+              category,
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
             const SizedBox(height: 4),
             Row(
               children: [
@@ -91,31 +107,44 @@ class _HistoryPageState extends State<HistoryPage> {
                 const Text("•",
                     style: TextStyle(color: Colors.grey, fontSize: 12)),
                 const SizedBox(width: 8),
-                Text(duration,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  duration,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
           ],
         ),
-        trailing: Container(
-          width: 44,
-          height: 44,
-          decoration: const BoxDecoration(
-            color: Color(0xFF6750A4),
-            shape: BoxShape.circle,
+        trailing: GestureDetector(
+          onTap: () {
+            final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+            audioProvider.setSong(
+              title,
+              artist: category,
+              thumbnail: imageUrl,
+            );
+          },
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFF6750A4),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.play_arrow, color: Colors.white),
           ),
-          child: const Icon(Icons.play_arrow, color: Colors.white),
         ),
       ),
     );
   }
 
-  Widget buildHistoryList() {
+  Widget buildHistoryList(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         buildSectionTitle("15/5/2023"),
         buildHistoryCard(
+          context,
           title: "The Future of Artificial Intelligence",
           category: "Tech Insights",
           startTime: "21:30",
@@ -123,6 +152,7 @@ class _HistoryPageState extends State<HistoryPage> {
           imageUrl: "https://picsum.photos/200?1",
         ),
         buildHistoryCard(
+          context,
           title: "Mindfulness Meditation",
           category: "Mindful Living",
           startTime: "17:15",
@@ -130,6 +160,7 @@ class _HistoryPageState extends State<HistoryPage> {
           imageUrl: "https://picsum.photos/200?2",
         ),
         buildHistoryCard(
+          context,
           title: "Ancient Roman History",
           category: "History Uncovered",
           startTime: "01:45",
@@ -138,6 +169,7 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
         buildSectionTitle("14/5/2023"),
         buildHistoryCard(
+          context,
           title: "Italian Pasta Recipes",
           category: "Culinary Masters",
           startTime: "19:20",
@@ -146,6 +178,7 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
         buildSectionTitle("13/5/2023"),
         buildHistoryCard(
+          context,
           title: "Investment Strategies",
           category: "Money Matters",
           startTime: "16:10",
@@ -190,7 +223,7 @@ class _HistoryPageState extends State<HistoryPage> {
           children: [
             buildHeader(),
             buildSearchBar(),
-            buildHistoryList(),
+            buildHistoryList(context),
             const SizedBox(height: 80),
           ],
         ),

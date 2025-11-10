@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/audio_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -17,35 +19,74 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget buildAudioCard(String title, String category, String duration) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+  Widget buildAudioCard(BuildContext context, String title, String category, String duration, {String? imageUrl}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           child: Image.network(
-            'https://picsum.photos/200',
-            width: 50,
-            height: 50,
+            imageUrl ?? 'https://picsum.photos/200?$title',
+            width: 60,
+            height: 60,
             fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                width: 60,
+                height: 60,
+                color: Colors.grey.shade300,
+                child: const Icon(Icons.music_note, color: Colors.grey),
+              );
+            },
           ),
         ),
-        title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        subtitle: Text(category),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(duration, style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.play_circle_fill, color: Colors.deepPurple),
-              onPressed: () {
-
-              },
+            Text(
+              category,
+              style: const TextStyle(color: Colors.grey, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 14, color: Colors.grey),
+                const SizedBox(width: 4),
+                Text(
+                  duration,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
             ),
           ],
+        ),
+        trailing: GestureDetector(
+          onTap: () {
+            final audioProvider = Provider.of<AudioProvider>(context, listen: false);
+            audioProvider.setSong(
+              title,
+              artist: category,
+              thumbnail: imageUrl ?? 'https://picsum.photos/200?$title',
+            );
+          },
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: const BoxDecoration(
+              color: Color(0xFF6750A4),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.play_arrow, color: Colors.white),
+          ),
         ),
       ),
     );
@@ -109,21 +150,51 @@ class HomePage extends StatelessWidget {
 
             // Continue Listening
             buildSectionTitle("Continue Listening"),
-            buildAudioCard("Financial Planning for Beginners",
-                "Money Matters", "27:25"),
             buildAudioCard(
-                "Effective Communication", "Career Growth", "30:30"),
-            buildAudioCard("Deep Dive into Quantum Physics",
-                "Science Explained", "37:25"),
+              context,
+              "Financial Planning for Beginners",
+              "Money Matters",
+              "27:25",
+              imageUrl: "https://picsum.photos/200?1",
+            ),
+            buildAudioCard(
+              context,
+              "Effective Communication",
+              "Career Growth",
+              "30:30",
+              imageUrl: "https://picsum.photos/200?2",
+            ),
+            buildAudioCard(
+              context,
+              "Deep Dive into Quantum Physics",
+              "Science Explained",
+              "37:25",
+              imageUrl: "https://picsum.photos/200?3",
+            ),
 
             // Trending Now
             buildSectionTitle("Trending Now"),
-            buildAudioCard("Financial Planning for Beginners",
-                "Money Matters", "27:25"),
             buildAudioCard(
-                "Effective Communication", "Career Growth", "30:30"),
-            buildAudioCard("Deep Dive into Quantum Physics",
-                "Science Explained", "37:25"),
+              context,
+              "Financial Planning for Beginners",
+              "Money Matters",
+              "27:25",
+              imageUrl: "https://picsum.photos/200?4",
+            ),
+            buildAudioCard(
+              context,
+              "Effective Communication",
+              "Career Growth",
+              "30:30",
+              imageUrl: "https://picsum.photos/200?5",
+            ),
+            buildAudioCard(
+              context,
+              "Deep Dive into Quantum Physics",
+              "Science Explained",
+              "37:25",
+              imageUrl: "https://picsum.photos/200?6",
+            ),
 
             const SizedBox(height: 80),
           ],

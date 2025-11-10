@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:audio/services/auth_service.dart'; // file chứa AuthService
 
-
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    bool staySignedIn = false;
+  State<LoginPage> createState() => _LoginPageState();
+}
 
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: Center(
@@ -32,15 +38,10 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
                 const Text("Email", style: TextStyle(fontWeight: FontWeight.w600)),
-                const TextField(
-                  decoration: InputDecoration(hintText: "Enter your email"),
-                ),
+                TextField(controller: emailController, decoration: const InputDecoration(hintText: "Enter your email")),
                 const SizedBox(height: 16),
                 const Text("Password", style: TextStyle(fontWeight: FontWeight.w600)),
-                const TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(hintText: "Enter your password"),
-                ),
+                TextField(controller: passwordController, obscureText: true, decoration: const InputDecoration(hintText: "Enter your password")),
                 const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -55,11 +56,12 @@ class LoginPage extends StatelessWidget {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     minimumSize: const Size(double.infinity, 40),
                   ),
-                  onPressed: () {},
+                  onPressed: () async {
+                    // Login bằng email/password (có thể thêm FirebaseAuth ở đây)
+                  },
                   child: const Text("Log In", style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
@@ -67,10 +69,19 @@ class LoginPage extends StatelessWidget {
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    FaIcon(FontAwesomeIcons.google, size: 28),
-                    SizedBox(width: 16),
-                    FaIcon(FontAwesomeIcons.facebook, color: Colors.blue, size: 28),
+                  children: [
+                    // Google Sign-In
+                    IconButton(
+                      icon: const FaIcon(FontAwesomeIcons.google, size: 28),
+                      onPressed: () async {
+                        final userCredential = await AuthService.signInWithGoogle();
+                        if (userCredential != null) {
+                          Navigator.pushReplacementNamed(context, '/home');
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 16),
+                    const FaIcon(FontAwesomeIcons.facebook, color: Colors.blue, size: 28),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -81,10 +92,7 @@ class LoginPage extends StatelessWidget {
                       const Text("Don't have an account? "),
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/signup'),
-                        child: const Text(
-                          "Sign up",
-                          style: TextStyle(color: Colors.deepPurple),
-                        ),
+                        child: const Text("Sign up", style: TextStyle(color: Colors.deepPurple)),
                       )
                     ],
                   ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/audio_provider.dart';
 
 class PlayerPage extends StatefulWidget {
   const PlayerPage({super.key});
@@ -8,12 +10,19 @@ class PlayerPage extends StatefulWidget {
 }
 
 class _PlayerPageState extends State<PlayerPage> {
-  bool isPlaying = true;
-  double progress = 0.03; // 3s / 30s demo
   bool isFavorite = false;
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$minutes:$seconds';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final audio = Provider.of<AudioProvider>(context);
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
@@ -46,38 +55,52 @@ class _PlayerPageState extends State<PlayerPage> {
             children: [
               const SizedBox(height: 20),
 
-              // Ảnh đại diện bài hát
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  "https://picsum.photos/400?tech",
-                  width: double.infinity,
-                  height: 240,
-                  fit: BoxFit.cover,
+              // Ảnh đại diện bài hát với Hero animation
+              Hero(
+                tag: 'album-art',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(50),
+                  child: Image.network(
+                    audio.thumbnailUrl,
+                    width: 300,
+                    height: 300,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: 240,
+                        color: Colors.grey.shade300,
+                        child: const Icon(
+                          Icons.music_note,
+                          color: Colors.grey,
+                          size: 80,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 24),
 
-              // Tên bài hát và tác giả
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Tech",
-                          style: TextStyle(
-                            fontSize: 22,
+                          audio.currentSong,
+                          style: const TextStyle(
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1E293B),
                           ),
                         ),
-                        SizedBox(height: 4),
+                        const SizedBox(height: 4),
                         Text(
-                          "Tech Insights",
-                          style: TextStyle(
+                          audio.currentArtist,
+                          style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFF64748B),
                           ),
@@ -99,12 +122,17 @@ class _PlayerPageState extends State<PlayerPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 5),
 
               // Thanh tiến trình
               Slider(
-                value: progress,
-                onChanged: (v) => setState(() => progress = v),
+                value: audio.progress.clamp(0.0, 1.0),
+                onChanged: (v) {
+                  final newPosition = Duration(
+                    milliseconds: (v * audio.duration.inMilliseconds).round(),
+                  );
+                  audio.setPosition(newPosition);
+                },
                 activeColor: const Color(0xFF6366F1),
                 inactiveColor: const Color(0xFFE2E8F0),
               ),
@@ -112,12 +140,18 @@ class _PlayerPageState extends State<PlayerPage> {
               // Thời lượng
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("0:03", style: TextStyle(color: Color(0xFF94A3B8))),
-                  Text("30:45", style: TextStyle(color: Color(0xFF94A3B8))),
+                children: [
+                  Text(
+                    _formatDuration(audio.position),
+                    style: const TextStyle(color: Color(0xFF94A3B8)),
+                  ),
+                  Text(
+                    _formatDuration(audio.duration),
+                    style: const TextStyle(color: Color(0xFF94A3B8)),
+                  ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
               // Nút điều khiển phát nhạc
               Row(
@@ -130,62 +164,40 @@ class _PlayerPageState extends State<PlayerPage> {
                   IconButton(
                     icon: const Icon(Icons.skip_previous_rounded,
                         size: 36, color: Color(0xFF475569)),
-                    onPressed: () {},
+                    onPressed: () {
+                      audio.previousSong();
+                    },
                   ),
                   GestureDetector(
-                    onTap: () => setState(() => isPlaying = !isPlaying),
+                    onTap: () => audio.togglePlay(),
                     child: Container(
-                      padding: const EdgeInsets.all(18),
+                      padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: Color(0xFF6366F1),
                       ),
                       child: Icon(
-                        isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        audio.isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                         color: Colors.white,
-                        size: 34,
+                        size: 36,
                       ),
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.skip_next_rounded,
                         size: 36, color: Color(0xFF475569)),
-                    onPressed: () {},
+                    onPressed: () {
+                      audio.nextSong();
+                    },
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.queue_music_rounded,
-                        color: Color(0xFF475569)),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-
-              // Dòng dưới cùng: tốc độ và chia sẻ
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
                   Row(
                     children: const [
                       Icon(Icons.timer_outlined, color: Color(0xFF475569)),
-                      SizedBox(width: 6),
                       Text(
                         "1x",
                         style: TextStyle(color: Color(0xFF475569), fontSize: 16),
                       ),
                     ],
-                  ),
-                  TextButton.icon(
-                    onPressed: () {},
-                    icon: const Icon(Icons.share_outlined,
-                        color: Color(0xFF475569)),
-                    label: const Text(
-                      "Share",
-                      style: TextStyle(
-                        color: Color(0xFF475569),
-                        fontSize: 16,
-                      ),
-                    ),
                   ),
                 ],
               ),

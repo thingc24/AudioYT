@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -20,7 +21,6 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           children: [
-            // Header
             const Text(
               "Profile",
               style: TextStyle(
@@ -30,8 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Profile Card
+            // Profile Card (giữ nguyên)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -74,8 +73,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             const SizedBox(height: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFEEF2FF),
                                 borderRadius: BorderRadius.circular(12),
@@ -95,8 +93,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 20),
-
-                  // Stats
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: const [
@@ -106,10 +102,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 14),
-
                   const Divider(thickness: 0.5, color: Color(0xFFE2E8F0)),
                   const SizedBox(height: 10),
-
                   const Text(
                     "Edit Profile",
                     style: TextStyle(
@@ -121,8 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Settings with Switch
+            // Settings với Switch (giữ nguyên)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -153,23 +146,27 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Settings buttons
+            // Buttons
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(
-                children: const [
-                  _ButtonItem(
+                children: [
+                  const _ButtonItem(
                     icon: Icons.settings_outlined,
                     title: "Settings",
                   ),
-                  Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                  // Log Out với chức năng
                   _ButtonItem(
                     icon: Icons.logout,
                     title: "Log Out",
+                    onTap: () async {
+                      await FirebaseAuth.instance.signOut();
+                      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                    },
                   ),
                 ],
               ),
@@ -258,12 +255,14 @@ class _SwitchItem extends StatelessWidget {
 class _ButtonItem extends StatelessWidget {
   final IconData icon;
   final String title;
-  const _ButtonItem({required this.icon, required this.title});
+  final VoidCallback? onTap;
+
+  const _ButtonItem({required this.icon, required this.title, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap ?? () {},
       borderRadius: BorderRadius.circular(20),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

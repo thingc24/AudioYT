@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class ForgotPasswordPage extends StatelessWidget {
+class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
+
+  @override
+  State<ForgotPasswordPage> createState() => _ForgotPasswordPageState();
+}
+
+class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
+  final TextEditingController _emailController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -32,21 +40,25 @@ class ForgotPasswordPage extends StatelessWidget {
                 const SizedBox(height: 20),
                 const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text("Email",
-                        style: TextStyle(fontWeight: FontWeight.w600))),
-                const TextField(
-                    decoration: InputDecoration(hintText: "Enter your email")),
+                    child: Text("Email", style: TextStyle(fontWeight: FontWeight.w600))),
+                TextField(controller: _emailController, decoration: const InputDecoration(hintText: "Enter your email")),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     minimumSize: const Size(double.infinity, 50),
                   ),
-                  onPressed: () {},
-                  child: const Text("Send Reset Link",
-                      style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    try {
+                      await FirebaseAuth.instance.sendPasswordResetEmail(email: _emailController.text.trim());
+                      ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Reset link sent to email")));
+                    } on FirebaseAuthException catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+                    }
+                  },
+                  child: const Text("Send Reset Link", style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -55,8 +67,7 @@ class ForgotPasswordPage extends StatelessWidget {
                     const Text("Remember your password? "),
                     GestureDetector(
                       onTap: () => Navigator.pushNamed(context, '/login'),
-                      child: const Text("Log in",
-                          style: TextStyle(color: Colors.deepPurple)),
+                      child: const Text("Log in", style: TextStyle(color: Colors.deepPurple)),
                     ),
                   ],
                 ),

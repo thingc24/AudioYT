@@ -1,12 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class SignUpPage extends StatelessWidget {
+class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    bool staySignedIn = false;
+  State<SignUpPage> createState() => _SignUpPageState();
+}
 
+class _SignUpPageState extends State<SignUpPage> {
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool staySignedIn = false;
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: Center(
@@ -23,30 +32,29 @@ class SignUpPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Center(
-                  child: Text("Create Account",
-                      style:
-                      TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+                  child: Text("Create Account", style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(height: 30),
                 const Text("Full Name", style: TextStyle(fontWeight: FontWeight.w600)),
-                const TextField(decoration: InputDecoration(hintText: "Enter your name")),
+                TextField(controller: _nameController, decoration: const InputDecoration(hintText: "Enter your name")),
                 const SizedBox(height: 16),
                 const Text("Email", style: TextStyle(fontWeight: FontWeight.w600)),
-                const TextField(decoration: InputDecoration(hintText: "Enter your email")),
+                TextField(controller: _emailController, decoration: const InputDecoration(hintText: "Enter your email")),
                 const SizedBox(height: 16),
                 const Text("Password", style: TextStyle(fontWeight: FontWeight.w600)),
-                const TextField(
-                    obscureText: true,
-                    decoration: InputDecoration(hintText: "Create a password")),
+                TextField(controller: _passwordController, obscureText: true, decoration: const InputDecoration(hintText: "Create a password")),
                 const SizedBox(height: 6),
-                const Text("Must be at least 8 characters",
-                    style: TextStyle(color: Colors.grey)),
+                const Text("Must be at least 8 characters", style: TextStyle(color: Colors.grey)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
                     Switch(
                       value: staySignedIn,
-                      onChanged: (v) {},
+                      onChanged: (v) {
+                        setState(() {
+                          staySignedIn = v;
+                        });
+                      },
                       activeColor: Colors.deepPurple,
                     ),
                     const Text("Stay signed in"),
@@ -56,13 +64,21 @@ class SignUpPage extends StatelessWidget {
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     minimumSize: const Size(double.infinity, 50),
                   ),
-                  onPressed: () {},
-                  child: const Text("Create Account",
-                      style: TextStyle(color: Colors.white)),
+                  onPressed: () async {
+                    try {
+                      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                        email: _emailController.text.trim(),
+                        password: _passwordController.text.trim(),
+                      );
+                      Navigator.pushReplacementNamed(context, '/home');
+                    } on FirebaseAuthException catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+                    }
+                  },
+                  child: const Text("Create Account", style: TextStyle(color: Colors.white)),
                 ),
                 const SizedBox(height: 16),
                 const Center(child: Text("Or continue with")),
@@ -83,9 +99,8 @@ class SignUpPage extends StatelessWidget {
                       const Text("Already have an account? "),
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/login'),
-                        child: const Text("Log in",
-                            style: TextStyle(color: Colors.deepPurple)),
-                      )
+                        child: const Text("Log in", style: TextStyle(color: Colors.deepPurple)),
+                      ),
                     ],
                   ),
                 )
