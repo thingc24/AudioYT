@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:audio/services/auth_service.dart'; // file chứa AuthService
+import 'package:firebase_auth/firebase_auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -60,7 +61,30 @@ class _LoginPageState extends State<LoginPage> {
                     minimumSize: const Size(double.infinity, 40),
                   ),
                   onPressed: () async {
-                    // Login bằng email/password (có thể thêm FirebaseAuth ở đây)
+                    try {
+                      final email = emailController.text.trim();
+                      final password = passwordController.text.trim();
+                      if (email.isEmpty || password.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Vui lòng nhập email và mật khẩu")),
+                        );
+                        return;
+                      }
+                      await FirebaseAuth.instance.signInWithEmailAndPassword(
+                        email: email,
+                        password: password,
+                      );
+                      if (!mounted) return;
+                      Navigator.pushReplacementNamed(context, '/home');
+                    } on FirebaseAuthException catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.message ?? "Đăng nhập thất bại")),
+                      );
+                    } catch (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Có lỗi xảy ra. Vui lòng thử lại.")),
+                      );
+                    }
                   },
                   child: const Text("Log In", style: TextStyle(color: Colors.white)),
                 ),

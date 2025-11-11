@@ -13,6 +13,8 @@ import 'package:audio/screens/history_page.dart';
 import 'package:audio/screens/profile_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audio/screens/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,18 +36,32 @@ class AudioApp extends StatelessWidget {
           useMaterial3: true,
           colorSchemeSeed: Colors.deepPurple,
         ),
-        home: StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+        home: FutureBuilder<bool>(
+          future: _shouldShowWelcome(),
+          builder: (context, welcomeSnapshot) {
+            if (welcomeSnapshot.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               );
             }
-            if (snapshot.hasData) {
-              return const MainScreen();
+            final showWelcome = welcomeSnapshot.data == true;
+            if (showWelcome) {
+              return const WelcomeScreen();
             }
-            return const LoginPage();
+            return StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasData) {
+                  return const MainScreen();
+                }
+                return const LoginPage();
+              },
+            );
           },
         ),
         routes: {
@@ -58,10 +74,17 @@ class AudioApp extends StatelessWidget {
           '/login': (context) => const LoginPage(),
           '/signup': (context) => const SignUpPage(),
           '/forgot': (context) => const ForgotPasswordPage(),
+          '/welcome': (context) => const WelcomeScreen(),
         },
       ),
     );
   }
+}
+
+Future<bool> _shouldShowWelcome() async {
+  final prefs = await SharedPreferences.getInstance();
+  final hasSeen = prefs.getBool('hasSeenWelcome') ?? false;
+  return !hasSeen;
 }
 
 class MainScreen extends StatefulWidget {
