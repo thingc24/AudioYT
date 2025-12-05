@@ -1,37 +1,171 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/audio_provider.dart';
+import 'package:audio/services/audio_api_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  Widget buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<dynamic> trending = [];
+  bool loading = true;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    loadTrending();
+  }
+
+  void loadTrending() async {
+    try {
+      setState(() {
+        loading = true;
+        errorMessage = null;
+      });
+
+      final data = await AudioApiService.getTrending();
+
+      setState(() {
+        trending = data;
+        loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Lỗi tải trending: $e';
+        loading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi: $e')),
+        );
+      }
+    }
+  }
+
+  void _playAudio(dynamic video, {int? index}) async {
+    try {
+      // Hiển thị loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Lấy audio stream từ backend
+      final audioData = await AudioApiService.getAudio(video['videoId']);
+
+      if (!mounted) return;
+      Navigator.pop(context); // Đóng loading dialog
+
+      // Tìm index của video trong danh sách trending
+      final videoIndex = index ?? trending.indexWhere((v) => v['videoId'] == video['videoId']);
+
+      // Chuyển sang player page với audio URL từ backend
+      Navigator.pushNamed(context, "/player", arguments: {
+        "url": audioData['url'], // ← URL audio từ backend
+        "videoId": video['videoId'], // ← YouTube videoId để lưu favorite
+        "title": audioData['title'],
+        "artist": audioData['author'],
+        "thumbnail": audioData['thumbnail'],
+        "suggestedVideos": trending, // Danh sách trending làm suggested videos
+        "suggestedIndex": videoIndex >= 0 ? videoIndex : -1,
+      });
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Đóng loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Lỗi phát nhạc: $e')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : errorMessage != null
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline,
+                size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(errorMessage!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: loadTrending,
+              child: const Text('Thử lại'),
+            ),
+          ],
+        ),
+      )
+          : trending.isEmpty
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.music_note,
+                size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Không có videos'),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: loadTrending,
+              child: const Text('Tải lại'),
+            ),
+          ],
+        ),
+      )
+          : ListView(
         children: [
-          Text(title,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          TextButton(onPressed: () {}, child: const Text("See all")),
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              "Trending Now",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          ...trending.asMap().entries.map((entry) {
+            return _buildVideoCard(entry.value, index: entry.key);
+          }),
+          const SizedBox(height: 80),
         ],
       ),
     );
   }
 
-  Widget buildAudioCard(BuildContext context, String title, String category, String duration, {String? imageUrl}) {
+  Widget _buildVideoCard(dynamic video, {required int index}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         leading: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(8),
           child: Image.network(
-            imageUrl ?? 'https://picsum.photos/200?$title',
+            video['thumbnail'] ?? '',
             width: 60,
             height: 60,
             fit: BoxFit.cover,
@@ -46,38 +180,28 @@ class HomePage extends StatelessWidget {
           ),
         ),
         title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          video['title'] ?? 'Unknown',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              category,
-              style: const TextStyle(color: Colors.grey, fontSize: 14),
+              video['author'] ?? 'Unknown',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.access_time, size: 14, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  duration,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
-              ],
+            Text(
+              '👁️ ${video['viewCount'] ?? 'N/A'}',
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
             ),
           ],
         ),
         trailing: GestureDetector(
-          onTap: () {
-            final audioProvider = Provider.of<AudioProvider>(context, listen: false);
-            audioProvider.setSong(
-              title,
-              artist: category,
-              thumbnail: imageUrl ?? 'https://picsum.photos/200?$title',
-            );
-          },
+          onTap: () => _playAudio(video, index: index),
           child: Container(
             width: 44,
             height: 44,
@@ -89,120 +213,6 @@ class HomePage extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  Widget buildMiniPlayer() {
-    return Container(
-      margin: const EdgeInsets.all(12),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              'https://picsum.photos/100',
-              width: 40,
-              height: 40,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(
-            child: Text("Tech Podcast",
-                style: TextStyle(fontWeight: FontWeight.w600)),
-          ),
-          IconButton(
-            icon: const Icon(Icons.pause),
-            onPressed: () {
-              //pause
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: ListView(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Good afternoon",
-                      style:
-                      TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 4),
-                  Text("What would you like to listen to today?"),
-                ],
-              ),
-            ),
-
-            // Continue Listening
-            buildSectionTitle("Continue Listening"),
-            buildAudioCard(
-              context,
-              "Financial Planning for Beginners",
-              "Money Matters",
-              "27:25",
-              imageUrl: "https://picsum.photos/200?1",
-            ),
-            buildAudioCard(
-              context,
-              "Effective Communication",
-              "Career Growth",
-              "30:30",
-              imageUrl: "https://picsum.photos/200?2",
-            ),
-            buildAudioCard(
-              context,
-              "Deep Dive into Quantum Physics",
-              "Science Explained",
-              "37:25",
-              imageUrl: "https://picsum.photos/200?3",
-            ),
-
-            // Trending Now
-            buildSectionTitle("Trending Now"),
-            buildAudioCard(
-              context,
-              "Financial Planning for Beginners",
-              "Money Matters",
-              "27:25",
-              imageUrl: "https://picsum.photos/200?4",
-            ),
-            buildAudioCard(
-              context,
-              "Effective Communication",
-              "Career Growth",
-              "30:30",
-              imageUrl: "https://picsum.photos/200?5",
-            ),
-            buildAudioCard(
-              context,
-              "Deep Dive into Quantum Physics",
-              "Science Explained",
-              "37:25",
-              imageUrl: "https://picsum.photos/200?6",
-            ),
-
-            const SizedBox(height: 80),
-          ],
-        ),
-      ),
-
-      // Mini Player
-      //bottomSheet: buildMiniPlayer(),
     );
   }
 }

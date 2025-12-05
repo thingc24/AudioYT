@@ -19,65 +19,83 @@ import 'package:audio/screens/welcome_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const AudioApp());
+  
+  // Khởi tạo audio service cho background playback
+  final audioProvider = AudioProvider();
+  await audioProvider.initializeAudioHandler();
+  
+  runApp(AudioApp(audioProvider: audioProvider));
 }
 
 class AudioApp extends StatelessWidget {
-  const AudioApp({super.key});
+  final AudioProvider? audioProvider;
+  
+  const AudioApp({super.key, this.audioProvider});
+
+  Widget _buildMaterialApp() {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Audio App',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.deepPurple,
+      ),
+      home: FutureBuilder<bool>(
+        future: _shouldShowWelcome(),
+        builder: (context, welcomeSnapshot) {
+          if (welcomeSnapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final showWelcome = welcomeSnapshot.data == true;
+          if (showWelcome) {
+            return const WelcomeScreen();
+          }
+          return StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasData) {
+                return const MainScreen();
+              }
+              return const LoginPage();
+            },
+          );
+        },
+      ),
+      routes: {
+        '/home': (context) => const MainScreen(),
+        '/search': (context) => const MainScreen(initialIndex: 1),
+        '/library': (context) => const MainScreen(initialIndex: 2),
+        '/history': (context) => const MainScreen(initialIndex: 3),
+        '/profile': (context) => const MainScreen(initialIndex: 4),
+        '/player': (context) => const PlayerPage(),
+        '/login': (context) => const LoginPage(),
+        '/signup': (context) => const SignUpPage(),
+        '/forgot': (context) => const ForgotPasswordPage(),
+        '/welcome': (context) => const WelcomeScreen(),
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AudioProvider(),
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Audio App',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.deepPurple,
-        ),
-        home: FutureBuilder<bool>(
-          future: _shouldShowWelcome(),
-          builder: (context, welcomeSnapshot) {
-            if (welcomeSnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(child: CircularProgressIndicator()),
-              );
-            }
-            final showWelcome = welcomeSnapshot.data == true;
-            if (showWelcome) {
-              return const WelcomeScreen();
-            }
-            return StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                if (snapshot.hasData) {
-                  return const MainScreen();
-                }
-                return const LoginPage();
-              },
-            );
-          },
-        ),
-        routes: {
-          '/home': (context) => const MainScreen(),
-          '/search': (context) => const MainScreen(initialIndex: 1),
-          '/library': (context) => const MainScreen(initialIndex: 2),
-          '/history': (context) => const MainScreen(initialIndex: 3),
-          '/profile': (context) => const MainScreen(initialIndex: 4),
-          '/player': (context) => const PlayerPage(),
-          '/login': (context) => const LoginPage(),
-          '/signup': (context) => const SignUpPage(),
-          '/forgot': (context) => const ForgotPasswordPage(),
-          '/welcome': (context) => const WelcomeScreen(),
-        },
-      ),
-    );
+    if (audioProvider != null) {
+      return ChangeNotifierProvider.value(
+        value: audioProvider!,
+        child: _buildMaterialApp(),
+      );
+    } else {
+      return ChangeNotifierProvider(
+        create: (_) => AudioProvider(),
+        child: _buildMaterialApp(),
+      );
+    }
   }
 }
 

@@ -14,6 +14,14 @@ class _ProfilePageState extends State<ProfilePage> {
   bool notifications = true;
   bool darkMode = false;
 
+  User? _user;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-            // Profile Card (giữ nguyên)
+            // Profile Card (updated with real data)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -45,7 +53,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(50),
                         child: Image.network(
-                          "https://picsum.photos/200?profile",
+                          _user?.photoURL ?? "https://picsum.photos/200?profile",
                           width: 70,
                           height: 70,
                           fit: BoxFit.cover,
@@ -56,18 +64,18 @@ class _ProfilePageState extends State<ProfilePage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              "Ngọc Thi",
-                              style: TextStyle(
+                            Text(
+                              _user?.displayName ?? "No Name",
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF1E293B),
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              "abc@hmail.com",
-                              style: TextStyle(
+                            Text(
+                              _user?.email ?? "No Email",
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF94A3B8),
                               ),
@@ -97,9 +105,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: const [
-                      _StatItem(count: "48", label: "Favorites"),
-                      _StatItem(count: "12", label: "Playlists"),
-                      _StatItem(count: "156", label: "History"),
+                      _StatItem(count: "0", label: "Favorites"),
+                      _StatItem(count: "0", label: "Playlists"),
+                      _StatItem(count: "0", label: "History"),
                     ],
                   ),
                   const SizedBox(height: 14),
@@ -116,7 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-            // Settings với Switch (giữ nguyên)
+            // Settings with Switch (giữ nguyên)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
